@@ -10,16 +10,21 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from core.settings import WHATSAPP_VERIFY_TOKEN
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
 
-@api_view(['GET', 'POST'])
-def validate_api(request):      
-    if request.method == 'POST':
+# @api_view(['GET', 'POST'])
+@csrf_exempt
+def validate_api(request):
+    if request.method == 'GET':
+        params = request.GET
+        if params.get('hub.verify_token') == WHATSAPP_VERIFY_TOKEN and params.get('hub.mode') == 'subscribe':
+            return HttpResponse(params.get('hub.challenge'))
+        return HttpResponse("ERROR")
+
+    elif request.method == 'POST':
             payload = json.loads(request.body.decode('utf-8'))
             print(payload)
-    
-            return Response({'msg': 'success'}, status=status.HTTP_200_OK)
-    elif request.method == 'GET':
-        params = request.query_params
-        if params.get('hub.verify_token') == WHATSAPP_VERIFY_TOKEN and params.get('hub.mode') == 'subscribe':
-            return Response(params.get('hub.challenge'), status=status.HTTP_200_OK)
-        return Response("ERROR", status=status.HTTP_400_BAD_REQUEST)
+            
+            return HttpResponse("OK", status=200)
+    return HttpResponse("ERROR", status=400)
